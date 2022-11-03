@@ -77,6 +77,114 @@ Docker 的主要用途，目前有三大类：
 
 &emsp;
 
-## Docker 的基本组成
+## Docker 概念
+
+Docker 的三个基本要素是镜像 (image)，容器 (container) 和仓库 (repository)。
+
+### 镜像
+
+镜像是一种轻量级、可执行的独立软件包，它包含运行某个软件所需的所有内容，我们把应用程序和配置依赖打包好形成一个可交付的运行环境(包括代码、运行时需要的库、环境变量和配置文件等)，这个打包好的运行环境就是 image 镜像文件。只有通过这个镜像文件才能生成 Docker 容器实例(类似 Java 中 new 出来一个对象)。
 
 
+
+UnionFS (联合文件系统): Union 文件系统 (UnionFS) 是一种分层、轻量级并且高性能的文件系统，它支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下 (unite several directories into a single virtual filesystem)。Union 文件系统是 Docker 镜像的基础。镜像可以通过分层来进行继承，基于基础镜像 (没有父镜像)，可以制作各种具体的应用镜像。
+
+&emsp;
+
+### 工作流程
+
+Docker 是一个 Client-Server 结构的系统，其守护进程运行在主机上，然后通过 socket 连接从客户端访问，守护进程从客户端接受命令并管理运行在主机上的容器。`docker run` 首先会去本地查找是否有对应的镜像，如果有直接生成容器，如果没有则需要去远程仓库拉去相对应的镜像存放在本地。
+
+&emsp;
+
+## Docker 常用指令
+
+`docker image` 列出主机上的镜像。
+
+该指令执行完后会出现一个列表，具体含义如下：
+
+| Repository | Tag      | Image ID | Created | Virtual Size |
+| ---------- | -------- | -------- | ------- | ------------ |
+| 镜像的仓库源     | 镜像的标签版本号 | 对应ID     | 创建时间    | 大小           |
+
+同一个仓库源可以有不同的 Tag，代表不同的版本，使用 `Repository : Tag` 来区分镜像。
+
+如果不指定具体的版本标签默认使用最新版本。
+
+&emsp;
+
+`docker search`  + 镜像名
+
+查询某一个镜像是否存在。
+
+&emsp;
+
+`docker pull` + 镜像名
+
+从远程仓库拉去镜像。
+
+&emsp;
+
+`docker rmi -f image_id`
+
+通过指定镜像ID删除镜像。
+
+&emsp;
+
+`docker run [OPTIONS] image_name`
+
+新建并启动一个容器
+
+`--name` : 为容器指定一个名称
+
+`-d` : 后台运行容器并返回容器 Id ，即启动守护式容器
+
+`-it` : 以交互模式运行容器，并且为容器分配一个伪输入终端
+
+`-p hostPort:containerPort` : 指定端口映射，`hostPort` 代表着希望访问的主机的端口号，找到 docker，`containerPort` 代表着访问 docker 内部哪一个容器。
+
+&emsp;
+
+`docker ps`
+
+列出当前正在运行的容器，如果需要列出历史上运行过的加上参数 `-a`，如果只看 id 用参数 `-q`。
+
+&emsp;
+
+`docker start container_id` 启动已经停止的容器
+
+`docker restart container_id` 重启容器
+
+`docker stop container_id` 停止容器
+
+`docker kill container_id` 强制停止容器
+
+`docker rm container_id` 删除已经停止的容器
+
+&emsp;
+
+`docker logs container_id` 
+
+查看容器的相应日志
+
+&emsp;
+
+`docker exec -it container_id bashShell`
+
+进入正在运行的容器并以命令行交互，`exec` 是在容器中打开新的终端，并且可以启动新的进程，用 `exit` 退出，不会导致容器的停止。
+
+&emsp;
+
+`docker cp container_id:container_path local_path`
+
+从容器内拷贝文件到主机上。
+
+&emsp;
+
+`docker export container_id > file.tar`
+
+`export` 导出容器的内容留作为一个 tar 归档文件。
+
+`cat file.tar | docker import - 镜像用户/镜像名:镜像版本号`
+
+`import` 从 tar 包中的内容创建一个新的文件系统再导入为镜像。
