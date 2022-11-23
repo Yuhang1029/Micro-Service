@@ -121,6 +121,8 @@ Docker 运行容器前需要本地存在对应的镜像，如果本地不存在�
 - Docker 镜像仓库地址：地址的格式一般是 `<域名/IP>[:端口号]`。默认地址是 Docker Hub(`docker.io`)。
 
 - 仓库名：如之前所说，这里的仓库名是两段式名称，即 `<用户名>/<软件名>`。对于 Docker Hub，如果不给出用户名，则默认为 `library`，也就是官方镜像。
+  
+  &emsp;
 
 ### 运行镜像
 
@@ -130,11 +132,13 @@ Docker 运行容器前需要本地存在对应的镜像，如果本地不存在�
 
 `--name` : 为容器指定一个名称
 
-`-d` : 后台运行容器并返回容器 Id ，即启动守护式容器
+`-d` : 后台运行容器并返回容器 Id ，即**启动守护式容器**
 
 `-it` : 以交互模式运行容器，并且为容器分配一个伪输入终端，后面可以加上 `/bin/bash`，代表通过 bash 来交互
 
 `-p hostPort:containerPort` : 指定端口映射，`hostPort` 代表着希望访问的主机的端口号，找到 docker，`containerPort` 代表着访问 docker 内部哪一个容器。
+
+&emsp;
 
 ### 列出镜像
 
@@ -152,6 +156,8 @@ Docker 运行容器前需要本地存在对应的镜像，如果本地不存在�
 
 查询某一个镜像是否存在。
 
+&emsp;
+
 ### 删除本地镜像
 
 当你要一次删除多张镜像时，可以使用一种方法。首先只需列出镜像即可获取镜像的 ID，然后执行简单的命令：
@@ -160,122 +166,27 @@ Docker 运行容器前需要本地存在对应的镜像，如果本地不存在�
 
 列出镜像的 ID，每个 ID 之间留一个空
 
+&emsp;
+
 ### Commit 指令
 
 `docker commit container_id created_image_name:tag` 当我们运行一个容器的时候（如果不使用卷的话），我们做的任何文件修改都会被记录于容器存储层里。而 Docker 提供了一个 `docker commit` 命令，可以将容器的存储层保存下来成为镜像。换句话说，就是在原有镜像的基础上，再叠加上容器的存储层，并构成新的镜像。以后我们运行这个新镜像的时候，就会拥有原有容器最后的文件变化。
 
 使用 `docker commit` 命令虽然可以比较直观的帮助理解镜像分层存储的概念，但是实际环境中并不会这样使用。使用 `docker commit` 意味着所有对镜像的操作都是黑箱操作，生成的镜像也被称为 **黑箱镜像**，换句话说，就是除了制作镜像的人知道执行过什么命令、怎么生成的镜像，别人根本无从得知。而且，即使是这个制作镜像的人，过一段时间后也无法记清具体的操作。这种黑箱镜像的维护工作是非常痛苦的。
 
+&emsp;
+
 ### 利用 Dockerfile 构建镜像
 
-### 工作流程
+Dockerfile 是一个文本文件，其内包含了一条条的**指令(Instruction)**，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。构建的三个步骤包括：
 
-Docker 是一个 Client-Server 结构的系统，其守护进程运行在主机上，然后通过 socket 连接从客户端访问，守护进程从客户端接受命令并管理运行在主机上的容器。`docker run` 首先会去本地查找是否有对应的镜像，如果有直接生成容器，如果没有则需要去远程仓库拉去相对应的镜像存放在本地。
+- 编写 Dockerfile 文件
 
-&emsp;
+- `docker build` 命令构建镜像
 
-### 容器卷
+- `docker run` 根据镜像运行容器实例
 
-容器卷的设计目的就是数据的持久化，将 Docker 容器内的数据保存进宿主机的磁盘中，完全独立于容器的生存周期，因此 Docker 不会在容器删除时删除其挂载的数据卷。它绕过 UFS，可以提供很多有用的特性：
-
-- `数据卷` 可以在容器之间共享和重用
-
-- 对 `数据卷` 的修改会立马生效
-
-- 对 `数据卷` 的更新，不会影响镜像
-
-- `数据卷` 默认会一直存在，即使容器被删
-
-创建一个数据卷
-
-```bash
-$ docker volume create my-vol
-```
-
-查看所有的数据卷
-
-```bash
-$ docker volume ls
-
-DRIVER              VOLUME NAME
-local               my-vol
-```
-
-删除数据卷
-
-```bash
-$ docker volume rm my-vol
-```
-
-无主的数据卷可能会占据很多空间，要清理请使用以下命令
-
-```bash
-$ docker volume prune
-```
-
-&emsp;
-
-## Docker 常用指令
-
-`docker exec -it container_id bashShell`
-
-进入正在运行的容器并以命令行交互，`exec` 是在容器中打开新的终端，并且可以启动新的进程，用 `exit` 退出，不会导致容器的停止。
-
-&emsp;
-
-`docker ps`
-
-列出当前正在运行的容器，如果需要列出历史上运行过的加上参数 `-a`，如果只看 id 用参数 `-q`。
-
-&emsp;
-
-`docker start container_id` 启动已经停止的容器
-
-`docker restart container_id` 重启容器
-
-`docker stop container_id` 停止容器
-
-`docker kill container_id` 强制停止容器
-
-`docker rm container_id` 删除已经停止的容器
-
-&emsp;
-
-`docker logs container_id` 
-
-查看容器的相应日志
-
-&emsp;
-
-&emsp;
-
-`docker cp container_id:container_path local_path`
-
-从容器内拷贝文件到主机上。
-
-&emsp;
-
-`docker export container_id > file.tar`
-
-`export` 导出容器的内容留作为一个 tar 归档文件。
-
-`cat file.tar | docker import - 镜像用户/镜像名:镜像版本号`
-
-`import` 从 tar 包中的内容创建一个新的文件系统再导入为镜像。
-
-&emsp;
-
-## Dockerfile 解析
-
-Dockerfile 是一个文本文件，其内包含了一条条的 **指令(Instruction)**，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。构建的三个步骤包括：
-
-* 编写 Dockerfile 文件
-
-* `docker build` 命令构建镜像
-
-* `docker run` 根据镜像运行容器实例
-
-例如下面这个例子
+例如下面这个例子：
 
 ```bash
 $ mkdir mynginx
@@ -290,17 +201,17 @@ RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
 
 从应用软件的角度来看，Dockerfile、Docker 镜像与 Docker 容器分别代表软件的三个不同阶段，
 
-*  Dockerfile 是软件的原材料
+-  Dockerfile 是软件的原材料
 
-*  Docker 镜像是软件的交付品
+-  Docker 镜像是软件的交付品
 
-*  Docker 容器则可以认为是软件镜像的运行态，也即依照镜像运行的容器实例
+-  Docker 容器则可以认为是软件镜像的运行态，也即依照镜像运行的容器实例
 
 Dockerfile 面向开发，Docker 镜像成为交付标准，Docker 容器则涉及部署与运维，三者缺一不可，合力充当 Docker 体系的基石。
 
 &emsp;
 
-### Dockerfile 常用保留字段
+#### Dockerfile 常用保留字段
 
 `FROM`：基本都出现在第一行，代表该镜像基于哪一个镜像。
 
@@ -348,9 +259,7 @@ CMD echo "success--------------ok"
 CMD /bin/bash
 ```
 
-&emsp;
-
-### 构建镜像
+#### 构建镜像
 
 以下面这个 Dockerfile 举例：
 
@@ -380,3 +289,136 @@ Successfully built 44aa4490ce2c
 如果注意，会看到 `docker build` 命令最后有一个 `.`。`.` 表示当前目录，而 `Dockerfile` 就在当前目录，因此不少初学者以为这个路径是在指定 `Dockerfile` 所在路径，这么理解其实是不准确的。如果对应上面的命令格式，你可能会发现，这是在指定 **上下文路径**。那么什么是上下文呢？
 
 首先我们要理解 `docker build` 的工作原理。Docker 在运行时分为 Docker 引擎（也就是服务端守护进程）和客户端工具。Docker 的引擎提供了一组 REST API，被称为 `Docker Remote API`，而如 `docker` 命令这样的客户端工具，则是通过这组 API 与 Docker 引擎交互，从而完成各种功能。因此，虽然表面上我们好像是在本机执行各种 `docker` 功能，但实际上，一切都是使用的远程调用形式在服务端（Docker 引擎）完成。也因为这种 C/S 设计，让我们操作远程服务器的 Docker 引擎变得轻而易举。
+
+&emsp;
+
+## 操作容器
+
+### 启动容器
+
+启动容器有两种方式，一种是基于镜像新建一个容器并启动，另外一个是将在终止状态（`exited`）的容器重新启动。
+
+前面已经讲过了 `docker run` 的指令使用方法，这里主要说一下在后台的标准操作的流程：
+
+- 检查本地是否存在指定的镜像，不存在就从 registry 下载
+
+- 利用镜像创建并启动一个容器
+
+- 分配一个文件系统，并在只读的镜像层外面挂载一层可读写层
+
+- 从宿主主机配置的网桥接口中桥接一个虚拟接口到容器中去
+
+- 从地址池配置一个 ip 地址给容器
+
+- 执行用户指定的应用程序
+
+- 执行完毕后容器被终止
+
+如果需要重新启动一个容器，可以用：
+
+`docker start container_id` 启动已经停止的容器
+
+`docker restart container_id` 重启容器
+
+&emsp;
+
+### 进入容器
+
+某些时候需要进入容器进行操作，包括使用 `docker attach` 命令或 `docker exec` 命令，推荐大家使用 `docker exec` 命令。
+
+对于 attach 命令，下面的示例显示了如何使用：
+
+```bash
+$ docker run -it -d ubuntu
+243c32535da7d142fb0e6df616a3c3ada0b8ab417937c853a9e1c251f499f550
+
+$ docker container ls
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+243c32535da7 ubuntu:latest "/bin/bash" 18 seconds ago Up 17 seconds nostalgic_hypatia
+
+$ docker attach 243c
+root@243c32535da7:/#
+```
+
+*注意：* 如果从这个 stdin 中 exit，会导致容器的停止。
+
+如果使用 `exec`，指令如下：
+
+`docker exec -it container_id bashShell`
+
+进入正在运行的容器并以命令行交互，`exec` 是在容器中打开新的终端，并且可以启动新的进程，用 `exit` 退出，不会导致容器的停止。
+
+&emsp;
+
+### 查看容器
+
+`docker ps`
+
+列出当前正在运行的容器，如果需要列出历史上运行过的加上参数 `-a`，如果只看 id 用参数 `-q`。
+
+`docker logs container_id`
+
+查看容器的相应日志
+
+&emsp;
+
+### 导出和导入
+
+`docker export container_id > file.tar`
+
+`export` 导出容器的内容留作为一个 tar 归档文件。
+
+`cat file.tar | docker import - 镜像用户/镜像名:镜像版本号`
+
+`import` 从 tar 包中的内容创建一个新的文件系统再导入为镜像。
+
+&emsp;
+
+### 终止与删除容器
+
+`docker stop container_id` 停止容器
+
+`docker kill container_id` 强制停止容器
+
+`docker rm container_id` 删除已经停止的容器
+
+&emsp;
+
+## 容器卷
+
+容器卷的设计目的就是数据的持久化，将 Docker 容器内的数据保存进宿主机的磁盘中，完全独立于容器的生存周期，因此 Docker 不会在容器删除时删除其挂载的数据卷。它绕过 UFS，可以提供很多有用的特性：
+
+- `数据卷` 可以在容器之间共享和重用
+
+- 对 `数据卷` 的修改会立马生效
+
+- 对 `数据卷` 的更新，不会影响镜像
+
+- `数据卷` 默认会一直存在，即使容器被删
+
+创建一个数据卷
+
+```bash
+$ docker volume create my-vol
+```
+
+查看所有的数据卷
+
+```bash
+$ docker volume ls
+
+DRIVER              VOLUME NAME
+local               my-vol
+```
+
+删除数据卷
+
+```bash
+$ docker volume rm my-vol
+```
+
+无主的数据卷可能会占据很多空间，要清理请使用以下命令
+
+```bash
+$ docker volume prune
+```
