@@ -10,7 +10,9 @@
 
 ---
 
-## 环境配置的难点
+## 为什么要用 Docker
+
+### 环境配置的难点
 
 软件开发最大的麻烦事之一，就是环境配置。用户计算机的环境都不相同，你怎么知道自家的软件，能在那些机器跑起来？用户必须保证两件事：操作系统的设置，各种库和组件的安装。只有它们都正确，软件才能运行。举例来说，安装一个 Python 应用，计算机必须有 Python 引擎，还必须有各种依赖，可能还要配置环境变量。如果某些老旧的模块与当前环境不兼容，那就麻烦了。开发者常常会说："它在我的机器可以跑了"（It works on my machine），言下之意就是，其他机器很可能跑不了。
 
@@ -18,13 +20,12 @@
 
 &emsp;
 
-## 容器与虚拟机
+### 容器与虚拟机
 
-### 虚拟机
+#### 虚拟机
 
 虚拟机（virtual machine）就是带环境安装的一种解决方案。它可以在一种操作系统里面运行另一种操作系统，比如在 Windows 系统里面运行 Linux 系统。应用程序对此毫无感知，因为虚拟机看上去跟真实系统一模一样，而对于底层系统来说，虚拟机就是一个普通文件，不需要了就删掉，对其他部分毫无影响。
 
-&emsp;
 虽然用户可以通过虚拟机还原软件的原始环境。但是，这个方案有几个缺点：
 
 1. 资源占用多
@@ -41,7 +42,7 @@
 
 &emsp;
 
-### 容器
+#### 容器
 
 由于虚拟机存在这些缺点，Linux 发展出了另一种虚拟化技术：Linux 容器（Linux Containers，缩写为 LXC）。Linux 容器不是模拟一个完整的操作系统，而是对进程进行隔离，或者说，在正常进程的外面套了一个保护层，对于容器里面的进程来说，它接触到的各种资源都是虚拟的，从而实现与底层系统的隔离。由于容器是进程级别的，相比虚拟机有很多优势：
 
@@ -79,7 +80,7 @@ Docker 的主要用途，目前有三大类：
 
 &emsp;
 
-## Docker 概念
+## Docker 三大组件
 
 Docker 的三个基本要素是镜像 (image)，容器 (container) 和仓库 (repository)。
 
@@ -87,15 +88,7 @@ Docker 的三个基本要素是镜像 (image)，容器 (container) 和仓库 (re
 
 镜像是一种轻量级、可执行的独立软件包，它包含运行某个软件所需的所有内容，我们把应用程序和配置依赖打包好形成一个可交付的运行环境(包括代码、运行时需要的库、环境变量和配置文件等)，这个打包好的运行环境就是 image 镜像文件。**只有通过这个镜像文件才能生成 Docker 容器实例 (类似 Java 中 new 出来一个对象)**。
 
-UnionFS (联合文件系统): Union 文件系统 (UnionFS) 是一种分层、轻量级并且高性能的文件系统，它支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下 (unite several directories into a single virtual filesystem)。Union 文件系统是 Docker 镜像的基础。镜像可以通过分层来进行继承，基于基础镜像 (没有父镜像)，可以制作各种具体的应用镜像。
-
-
-
-### 镜像加载原理
-
-Docker 的镜像实际上由一层一层的文件系统组成，这种层级的文件系统就是 UnionFS。Bootfs (boot file system) 主要包含 bootloader 和 kernel , bootloader主要是引导加载kernel, Linux 刚启动时会加载 bootfs 文件系统，在 Docker 镜像的最底层是引导文件系统bootfs。这一层与我们典型的 Linux/Unix 系统是一样的，包含 boot 加载器和内核。当 boot 加载完成之后整个内核就都在内存中了，此时内存的使用权已由 bootfs 转交给内核，此时系统也会卸载 bootfs。rootfs (root file system) ，在 bootfs 之上。包含的就是典型 Linux 系统中的 /dev, /proc, /bin, /etc 等标准目录和文件。rootfs 就是各种不同的操作系统发行版，比如 Ubuntu，Centos 等等。对于一个精简的OS，rootfs 可以很小，只需要包括最基本的命令、工具和程序库就可以了，因为底层直接用 Host 的 kernel，自己只需要提供 rootfs 就行了。由此可见对于不同的 Linux 发行版, bootfs 基本是一致的, rootfs 会有差别, 因此不同的发行版可以公用 bootfs。
-
-镜像分层最大的一个好处就是共享资源，方便复制迁移，就是为了复用。比如说有多个镜像都从相同的 base 镜像构建而来，那么 Docker Host 只需在磁盘上保存一份 base 镜像；同时内存中也只需加载一份 base 镜像，就可以为所有容器服务了。而且镜像的每一层都可以被共享。
+UnionFS (联合文件系统): Union 文件系统 (UnionFS) 是一种分层、轻量级并且高性能的文件系统，它支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下 (unite several directories into a single virtual filesystem)。Union 文件系统是 Docker 镜像的基础。镜像可以通过分层来进行继承，基于基础镜像 (没有父镜像)，可以制作各种具体的应用镜像。镜像分层最大的一个好处就是共享资源，方便复制迁移，就是为了复用。比如说有多个镜像都从相同的 base 镜像构建而来，那么 Docker Host 只需在磁盘上保存一份 base 镜像；同时内存中也只需加载一份 base 镜像，就可以为所有容器服务了。而且镜像的每一层都可以被共享。
 
 &emsp;
 
@@ -112,6 +105,68 @@ Docker 的镜像实际上由一层一层的文件系统组成，这种层级的�
 镜像构建完成后，可以很容易的在当前宿主机上运行，但是，如果需要在其它服务器上使用这个镜像，我们就需要一个集中的存储、分发镜像的服务，Docker Registry 就是这样的服务。一个 Docker Registry 中可以包含多个 **仓库**（`Repository`）；每个仓库可以包含多个 **标签**（`Tag`）；每个标签对应一个镜像。通常，一个仓库会包含同一个软件不同版本的镜像，而标签就常用于对应该软件的各个版本。我们可以通过 `<仓库名>:<标签>` 的格式来指定具体是这个软件哪个版本的镜像。如果不给出标签，将以 `latest` 作为默认标签。仓库分为公有仓库和私有仓库。公有仓库是开放给用户使用、允许用户管理镜像的 Registry 服务。一般这类公开服务允许用户免费上传、下载公开的镜像，并可能提供收费服务供用户管理私有镜像。除了使用公有仓库外，用户还可以在本地搭建私有仓库。
 
 &emsp;
+
+## 使用镜像
+
+### 获取镜像
+
+Docker 运行容器前需要本地存在对应的镜像，如果本地不存在该镜像，Docker 会从镜像仓库下载该镜像。
+
+从 Docker 镜像仓库获取镜像的命令是 `docker pull`。其命令格式为：
+
+`docker pull [选项] [Docker Registry 地址[:端口号]/]仓库名[:标签]`
+
+具体的选项可以通过 `docker pull --help` 命令看到，这里我们说一下镜像名称的格式。
+
+- Docker 镜像仓库地址：地址的格式一般是 `<域名/IP>[:端口号]`。默认地址是 Docker Hub(`docker.io`)。
+
+- 仓库名：如之前所说，这里的仓库名是两段式名称，即 `<用户名>/<软件名>`。对于 Docker Hub，如果不给出用户名，则默认为 `library`，也就是官方镜像。
+
+### 运行镜像
+
+有了镜像后，我们就能够以这个镜像为基础启动并运行一个容器。指令如下：
+
+`docker run [OPTIONS] image_name`
+
+`--name` : 为容器指定一个名称
+
+`-d` : 后台运行容器并返回容器 Id ，即启动守护式容器
+
+`-it` : 以交互模式运行容器，并且为容器分配一个伪输入终端，后面可以加上 `/bin/bash`，代表通过 bash 来交互
+
+`-p hostPort:containerPort` : 指定端口映射，`hostPort` 代表着希望访问的主机的端口号，找到 docker，`containerPort` 代表着访问 docker 内部哪一个容器。
+
+### 列出镜像
+
+`docker image ls` 列出主机上的镜像。
+
+该指令执行完后会出现一个列表，具体含义如下：
+
+| Repository | Tag      | Image ID | Created | Virtual Size |
+| ---------- | -------- | -------- | ------- | ------------ |
+| 镜像的仓库源     | 镜像的标签版本号 | 对应ID     | 创建时间    | 大小           |
+
+同一个仓库源可以有不同的 Tag，代表不同的版本，使用 `Repository : Tag` 来区分镜像。如果不指定具体的版本标签默认使用最新版本。
+
+`docker search 镜像名`
+
+查询某一个镜像是否存在。
+
+### 删除本地镜像
+
+当你要一次删除多张镜像时，可以使用一种方法。首先只需列出镜像即可获取镜像的 ID，然后执行简单的命令：
+
+`docker rmi <your-image-id> <your-image-id> ...`
+
+列出镜像的 ID，每个 ID 之间留一个空
+
+### Commit 指令
+
+`docker commit container_id created_image_name:tag` 当我们运行一个容器的时候（如果不使用卷的话），我们做的任何文件修改都会被记录于容器存储层里。而 Docker 提供了一个 `docker commit` 命令，可以将容器的存储层保存下来成为镜像。换句话说，就是在原有镜像的基础上，再叠加上容器的存储层，并构成新的镜像。以后我们运行这个新镜像的时候，就会拥有原有容器最后的文件变化。
+
+使用 `docker commit` 命令虽然可以比较直观的帮助理解镜像分层存储的概念，但是实际环境中并不会这样使用。使用 `docker commit` 意味着所有对镜像的操作都是黑箱操作，生成的镜像也被称为 **黑箱镜像**，换句话说，就是除了制作镜像的人知道执行过什么命令、怎么生成的镜像，别人根本无从得知。而且，即使是这个制作镜像的人，过一段时间后也无法记清具体的操作。这种黑箱镜像的维护工作是非常痛苦的。
+
+### 利用 Dockerfile 构建镜像
 
 ### 工作流程
 
@@ -130,8 +185,6 @@ Docker 是一个 Client-Server 结构的系统，其守护进程运行在主机�
 - 对 `数据卷` 的更新，不会影响镜像
 
 - `数据卷` 默认会一直存在，即使容器被删
-
-
 
 创建一个数据卷
 
@@ -164,49 +217,9 @@ $ docker volume prune
 
 ## Docker 常用指令
 
-`docker image` 列出主机上的镜像。
+`docker exec -it container_id bashShell`
 
-该指令执行完后会出现一个列表，具体含义如下：
-
-| Repository | Tag      | Image ID | Created | Virtual Size |
-| ---------- | -------- | -------- | ------- | ------------ |
-| 镜像的仓库源     | 镜像的标签版本号 | 对应ID     | 创建时间    | 大小           |
-
-同一个仓库源可以有不同的 Tag，代表不同的版本，使用 `Repository : Tag` 来区分镜像。
-
-如果不指定具体的版本标签默认使用最新版本。
-
-&emsp;
-
-`docker search`  + 镜像名
-
-查询某一个镜像是否存在。
-
-&emsp;
-
-`docker pull` + 镜像名
-
-从远程仓库拉去镜像。
-
-&emsp;
-
-`docker rmi -f image_id`
-
-通过指定镜像ID删除镜像。
-
-&emsp;
-
-`docker run [OPTIONS] image_name`
-
-新建并启动一个容器
-
-`--name` : 为容器指定一个名称
-
-`-d` : 后台运行容器并返回容器 Id ，即启动守护式容器
-
-`-it` : 以交互模式运行容器，并且为容器分配一个伪输入终端
-
-`-p hostPort:containerPort` : 指定端口映射，`hostPort` 代表着希望访问的主机的端口号，找到 docker，`containerPort` 代表着访问 docker 内部哪一个容器。
+进入正在运行的容器并以命令行交互，`exec` 是在容器中打开新的终端，并且可以启动新的进程，用 `exit` 退出，不会导致容器的停止。
 
 &emsp;
 
@@ -233,17 +246,6 @@ $ docker volume prune
 查看容器的相应日志
 
 &emsp;
-
-`docker commit container_id created_image_name:tag`
-当我们运行一个容器的时候（如果不使用卷的话），我们做的任何文件修改都会被记录于容器存储层里。而 Docker 提供了一个 `docker commit` 命令，可以将容器的存储层保存下来成为镜像。换句话说，就是在原有镜像的基础上，再叠加上容器的存储层，并构成新的镜像。以后我们运行这个新镜像的时候，就会拥有原有容器最后的文件变化。
-
-使用 `docker commit` 命令虽然可以比较直观的帮助理解镜像分层存储的概念，但是实际环境中并不会这样使用。使用 `docker commit` 意味着所有对镜像的操作都是黑箱操作，生成的镜像也被称为 **黑箱镜像**，换句话说，就是除了制作镜像的人知道执行过什么命令、怎么生成的镜像，别人根本无从得知。而且，即使是这个制作镜像的人，过一段时间后也无法记清具体的操作。这种黑箱镜像的维护工作是非常痛苦的。
-
-
-
-`docker exec -it container_id bashShell`
-
-进入正在运行的容器并以命令行交互，`exec` 是在容器中打开新的终端，并且可以启动新的进程，用 `exit` 退出，不会导致容器的停止。
 
 &emsp;
 
@@ -286,8 +288,6 @@ FROM nginx
 RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
 ```
 
-
-
 从应用软件的角度来看，Dockerfile、Docker 镜像与 Docker 容器分别代表软件的三个不同阶段，
 
 *  Dockerfile 是软件的原材料
@@ -322,10 +322,10 @@ Dockerfile 中每一个指令都会建立一层，`RUN` 也不例外。每一个
 
 ```dockerfile
 FROM centos
- 
+
 ENV MYPATH /usr/local
 WORKDIR $MYPATH
- 
+
 #安装 vim 编辑器
 RUN yum -y install vim
 #安装 ifconfig 命令查看网络IP
@@ -340,9 +340,9 @@ ENV JAVA_HOME /usr/local/java/jdk1.8.0_171
 ENV JRE_HOME $JAVA_HOME/jre
 ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib:$CLASSPATH
 ENV PATH $JAVA_HOME/bin:$PATH
- 
+
 EXPOSE 80
- 
+
 CMD echo $MYPATH
 CMD echo "success--------------ok"
 CMD /bin/bash
